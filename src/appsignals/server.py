@@ -2,16 +2,22 @@ import asyncio
 import boto3
 from botocore.exceptions import ClientError
 from datetime import datetime, timedelta, timezone
-from fastmcp import FastMCP, Client
+from fastmcp import FastMCP, Client, Context
 from pydantic import Field, ValidationError
+import logging
 
 from appsignals.models import ListServicesResponse, ListServicesParams, ServiceSummary
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
 mcp = FastMCP(name="AppSignals MCP Server")
 
 try:
     appsignals_client = boto3.client("application-signals")
+    logger.info("Successfully initialized AWS Application Signals client")
 except Exception as e:
+    logger.error(f"Failed to initialize AWS client: {e}")
     raise
 
 @mcp.tool(
@@ -33,10 +39,14 @@ except Exception as e:
     """
 )
 async def list_monitored_services(
+    ctx: Context,
     hours_back: int = Field(24, description="Hours to look back from now"),
     max_results: int = Field(100, description="Maximum services to return (1-500)")
 ) -> str:
     try:
+        await ctx.info(f"Listing monitored services for the last {hours_back} hours")
+        await ctx.debug(f"Max results set to {max_results}")
+
         end_time = datetime.now(timezone.utc)
         start_time = end_time - timedelta(hours=hours_back)
 
@@ -55,9 +65,13 @@ async def list_monitored_services(
         response = ListServicesResponse(**raw_response)
 
         if not response.service_summaries:
+            await ctx.warning("No services found in the specified time range")
             return "No services found in Application Signals."
 
-        result = f"Application Signals Services ({len(response.service_summaries)} total):\n\n"
+        service_count = len(response.service_summaries)
+        await ctx.info(f"Found {service_count} monitored services")
+
+        result = f"Application Signals Services ({service_count} total):\n\n"
 
         for service in response.service_summaries:
             if service.key_attributes:
@@ -86,17 +100,22 @@ async def list_monitored_services(
             result += "\n"
 
         if response.next_token:
+            await ctx.warning("Results truncated - more services available")
             result += f"Note: More services available (NextToken: {response.next_token[:20]} ...)\n"
 
         return result
 
     except ValidationError as e:
-        return f"Invalid parameters: {e}"
+        error_message = f"Invalid parameters: {e}"
+        await ctx.error(error_message)
+        return error_message
     except ClientError as e:
         error_code = e.response.get("Error", {}).get("Code", "Unknown")
         error_message = e.response.get("Error", {}).get("Message", "Unknown error")
+        await ctx.error(f"AWS API error [{error_code}]: {error_message}")
         return f"AWS Error: {error_message}"
     except Exception as e:
+        await ctx.error(f"Unexpected error: {str(e)}")
         return f"Error: {str(e)}"
 
 
