@@ -5,6 +5,7 @@ from botocore.exceptions import ClientError
 
 pytest_plugins = ["pytest_asyncio"]
 
+
 @pytest.fixture
 def sample_list_services_response():
     """Same AWS ApplicationSignals list_services response"""
@@ -17,12 +18,12 @@ def sample_list_services_response():
                 "KeyAttributes": {
                     "Type": "Service",
                     "Name": "checkout-service",
-                    "Environment": "production"
+                    "Environment": "production",
                 },
                 "AttributeMaps": [
                     {
                         "AWS.Application": "ecommerce-app",
-                        "Telemetry.SDK": "aws-otel-python"
+                        "Telemetry.SDK": "aws-otel-python",
                     }
                 ],
                 "MetricReferences": [
@@ -31,12 +32,12 @@ def sample_list_services_response():
                         "MetricType": "Latency",
                         "Dimensions": [
                             {"Name": "ServiceName", "Value": "checkout-service"}
-                        ]
+                        ],
                     }
-                ]
+                ],
             }
         ],
-        "NextToken": None
+        "NextToken": None,
     }
 
 
@@ -53,12 +54,7 @@ def mock_boto3_client_error():
     """Mock boto3 client that raises ClientError"""
     with patch("appsignals.server.appsignals_client") as mock_client:
         mock_client.list_services.side_effect = ClientError(
-            {
-                "Error": {
-                    "Code": "ThrottlingException",
-                    "Message": "Rate exceeded"
-                }
-            },
-            "list_services"
+            {"Error": {"Code": "ThrottlingException", "Message": "Rate exceeded"}},
+            "list_services",
         )
         yield mock_client

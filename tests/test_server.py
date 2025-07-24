@@ -38,15 +38,13 @@ class TestListMonitoredServices:
             assert "Environment: production" in result.data
             assert "AWS.Application: ecommerce-app" in result.data
 
-
     @pytest.mark.asyncio
     async def test_list_services_with_custom_params(self, mock_boto3_client):
         """Test with custom hours_back and max_results parameters"""
         async with Client(mcp) as client:
-            result = await client.call_tool("list_monitored_services", {
-                "hours_back": 48,
-                "max_results": 50
-            })
+            result = await client.call_tool(
+                "list_monitored_services", {"hours_back": 48, "max_results": 50}
+            )
 
             call_args = mock_boto3_client.list_services.call_args[1]
 
@@ -55,13 +53,12 @@ class TestListMonitoredServices:
 
             assert call_args["MaxResults"] == 50
 
-
     @pytest.mark.asyncio
     async def test_list_services_empty_response(self, mock_boto3_client):
         """Test handling of empty service list"""
         mock_boto3_client.list_services.return_value = {
             "ServiceSummaries": [],
-            "NextToken": None
+            "NextToken": None,
         }
 
         async with Client(mcp) as client:
@@ -69,17 +66,12 @@ class TestListMonitoredServices:
 
             assert result.data == "No services found in Application Signals."
 
-
     @pytest.mark.asyncio
     async def test_list_services_with_minimal_attributes(self, mock_boto3_client):
         """Test handling services with minimal attributes"""
         mock_boto3_client.list_services.return_value = {
-            "ServiceSummaries": [{
-                "KeyAttributes": {
-                    "Name": "minimal-service"
-                }
-            }],
-            "NextToken": None
+            "ServiceSummaries": [{"KeyAttributes": {"Name": "minimal-service"}}],
+            "NextToken": None,
         }
 
         async with Client(mcp) as client:
@@ -90,22 +82,18 @@ class TestListMonitoredServices:
             assert "Environment:" not in result.data
             assert "Resource Type:" not in result.data
 
-
     @pytest.mark.asyncio
     async def test_list_services_no_key_attributes(self, mock_boto3_client):
         """Test handling services with no key attributes at all"""
         mock_boto3_client.list_services.return_value = {
-            "ServiceSummaries": [{
-                "AttributeMaps": [{"some": "data"}]
-            }],
-            "NextToken": None
+            "ServiceSummaries": [{"AttributeMaps": [{"some": "data"}]}],
+            "NextToken": None,
         }
 
         async with Client(mcp) as client:
             result = await client.call_tool("list_monitored_services", {})
 
             assert "Service: Unknown (no attributes)" in result.data
-
 
     @pytest.mark.asyncio
     async def test_client_error_handling(self, mock_boto3_client_error):
@@ -114,7 +102,6 @@ class TestListMonitoredServices:
             result = await client.call_tool("list_monitored_services", {})
 
             assert "AWS Error: Rate exceeded" in result.data
-
 
     @pytest.mark.asyncio
     async def test_generic_error_handling(self, mock_boto3_client):
@@ -126,7 +113,6 @@ class TestListMonitoredServices:
 
             assert "Error: Unexpected error" in result.data
 
-
     @pytest.mark.asyncio
     async def test_multiple_services(self, mock_boto3_client):
         """Test formatting of multiple services"""
@@ -136,7 +122,7 @@ class TestListMonitoredServices:
                     "KeyAttributes": {
                         "Type": "Service",
                         "Name": "checkout-service",
-                        "Environment": "production"
+                        "Environment": "production",
                     }
                 },
                 {
@@ -145,9 +131,9 @@ class TestListMonitoredServices:
                         "Name": "payment-api",
                         "Environment": "staging",
                     }
-                }
+                },
             ],
-            "NextToken": None
+            "NextToken": None,
         }
 
         async with Client(mcp) as client:
@@ -159,21 +145,22 @@ class TestListMonitoredServices:
             assert "Environment: production" in result.data
             assert "Environment: staging" in result.data
 
-
     @pytest.mark.asyncio
     async def test_service_with_metrics(self, mock_boto3_client):
         """Test service with metric references"""
         mock_boto3_client.list_services.return_value = {
-            "ServiceSummaries": [{
-                "KeyAttributes": {
-                    "Type": "Service",
-                    "Name": "api-gateway"
-                },
-                "MetricReferences": [
-                    {"Namespace": "AWS/ApplicationSignals", "MetricType": "Latency"},
-                    {"Namespace": "AWS/ApplicationSignals", "MetricType": "Error"}
-                ]
-            }]
+            "ServiceSummaries": [
+                {
+                    "KeyAttributes": {"Type": "Service", "Name": "api-gateway"},
+                    "MetricReferences": [
+                        {
+                            "Namespace": "AWS/ApplicationSignals",
+                            "MetricType": "Latency",
+                        },
+                        {"Namespace": "AWS/ApplicationSignals", "MetricType": "Error"},
+                    ],
+                }
+            ]
         }
 
         async with Client(mcp) as client:
@@ -182,22 +169,23 @@ class TestListMonitoredServices:
             assert "api-gateway" in result.data
             assert "Metrics: 2 configured" in result.data
 
-
     @pytest.mark.asyncio
     async def test_pagination_token_in_response(self, mock_boto3_client):
         """Test that pagination token is mentioned in output"""
         mock_boto3_client.list_services.return_value = {
-            "ServiceSummaries": [{
-                "KeyAttributes": {"Name": "service1", "Type": "Service"}
-            }],
-            "NextToken": "abcdefghijklmnopqrstuvwxyz123456"
+            "ServiceSummaries": [
+                {"KeyAttributes": {"Name": "service1", "Type": "Service"}}
+            ],
+            "NextToken": "abcdefghijklmnopqrstuvwxyz123456",
         }
 
         async with Client(mcp) as client:
             result = await client.call_tool("list_monitored_services", {})
 
-            assert "Note: More services available (NextToken: abcdefghijklmnopqrst ...)" in result.data
-
+            assert (
+                "Note: More services available (NextToken: abcdefghijklmnopqrst ...)"
+                in result.data
+            )
 
     @pytest.mark.asyncio
     async def test_timezone_awareness(self, mock_boto3_client):

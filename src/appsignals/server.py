@@ -9,7 +9,9 @@ import logging
 from appsignals.models import ListServicesResponse, ListServicesParams, ServiceSummary
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 
 mcp = FastMCP(name="AppSignals MCP Server")
 
@@ -19,6 +21,7 @@ try:
 except Exception as e:
     logger.error(f"Failed to initialize AWS client: {e}")
     raise
+
 
 @mcp.tool(
     description="""
@@ -41,7 +44,7 @@ except Exception as e:
 async def list_monitored_services(
     ctx: Context,
     hours_back: int = Field(24, description="Hours to look back from now"),
-    max_results: int = Field(100, description="Maximum services to return (1-500)")
+    max_results: int = Field(100, description="Maximum services to return (1-500)"),
 ) -> str:
     try:
         await ctx.info(f"Listing monitored services for the last {hours_back} hours")
@@ -51,15 +54,13 @@ async def list_monitored_services(
         start_time = end_time - timedelta(hours=hours_back)
 
         params = ListServicesParams(
-            start_time=start_time,
-            end_time=end_time,
-            max_results=max_results
+            start_time=start_time, end_time=end_time, max_results=max_results
         )
 
         raw_response = appsignals_client.list_services(
             StartTime=params.start_time,
             EndTime=params.end_time,
-            MaxResults=params.max_results
+            MaxResults=params.max_results,
         )
 
         response = ListServicesResponse(**raw_response)
@@ -84,7 +85,9 @@ async def list_monitored_services(
                 if service.key_attributes.environment:
                     result += f"  Environment: {service.key_attributes.environment}\n"
                 if service.key_attributes.resource_type:
-                    result += f"  Resource Type: {service.key_attributes.resource_type}\n"
+                    result += (
+                        f"  Resource Type: {service.key_attributes.resource_type}\n"
+                    )
 
                 if service.attribute_maps:
                     result += "  Additional Attributes:\n"
@@ -93,7 +96,9 @@ async def list_monitored_services(
                             result += f"    {key}: {value}\n"
 
                 if service.metric_references:
-                    result += f"  Metrics: {len(service.metric_references)} configured\n"
+                    result += (
+                        f"  Metrics: {len(service.metric_references)} configured\n"
+                    )
             else:
                 result += "Service: Unknown (no attributes)\n"
 

@@ -1,7 +1,4 @@
-EMPTY_SERVICE_RESPONSE = {
-    "ServiceSummaries": [],
-    "NextToken": None
-}
+EMPTY_SERVICE_RESPONSE = {"ServiceSummaries": [], "NextToken": None}
 
 MULTI_SERVICE_RESPONSE = {
     "ServiceSummaries": [
@@ -9,26 +6,20 @@ MULTI_SERVICE_RESPONSE = {
             "KeyAttributes": {
                 "Type": "Service",
                 "Name": "checkout-service",
-                "Environment": "production"
+                "Environment": "production",
             }
         },
         {
             "KeyAttributes": {
                 "Type": "Service",
                 "Name": "payment-service",
-                "Environment": "production"
+                "Environment": "production",
             }
-        }
+        },
     ],
-    "NextToken": "next-page-token"
+    "NextToken": "next-page-token",
 }
 
 SERVICE_WITH_MINIMAL_ATTRS = {
-    "ServiceSummaries": [
-        {
-            "KeyAttributes": {
-                "Name": "minimal-service"
-            }
-        }
-    ]
+    "ServiceSummaries": [{"KeyAttributes": {"Name": "minimal-service"}}]
 }
