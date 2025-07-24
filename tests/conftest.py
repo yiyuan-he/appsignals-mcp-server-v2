@@ -1,5 +1,5 @@
 import pytest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, patch
 from botocore.exceptions import ClientError
 
@@ -8,7 +8,10 @@ pytest_plugins = ["pytest_asyncio"]
 @pytest.fixture
 def sample_list_services_response():
     """Same AWS ApplicationSignals list_services response"""
+    now = datetime.now(timezone.utc)
     return {
+        "StartTime": now - timedelta(hours=24),
+        "EndTime": now,
         "ServiceSummaries": [
             {
                 "KeyAttributes": {

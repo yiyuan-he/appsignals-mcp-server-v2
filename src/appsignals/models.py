@@ -14,22 +14,12 @@ class AWSBaseModel(BaseModel):
 
 class MetricDimension(AWSBaseModel):
     """Represents a CloudWatch metric dimension."""
-    model_config = ConfigDict(
-        alias_generator=to_pascal,
-        populate_by_name=True
-    )
-
     name: str
     value: str
 
 
 class KeyAttributes(AWSBaseModel):
     """Key attributes that identify a service in Application Signals."""
-    model_config = ConfigDict(
-        alias_generator=to_pascal,
-        populate_by_name=True
-    )
-
     type: Optional[str] = None
     resource_type: Optional[str] = None
     name: Optional[str] = None
@@ -39,11 +29,6 @@ class KeyAttributes(AWSBaseModel):
 
 class MetricReference(AWSBaseModel):
     """Reference to a CloudWatch metric associated with a service."""
-    model_config = ConfigDict(
-        alias_generator=to_pascal,
-        populate_by_name=True
-    )
-
     namespace: Optional[str] = None
     metric_type: Optional[str] = None
     dimensions: Optional[List[MetricDimension]] = None
@@ -53,11 +38,6 @@ class MetricReference(AWSBaseModel):
 
 class ServiceSummary(AWSBaseModel):
     """Summary information about a discovered service."""
-    model_config = ConfigDict(
-        alias_generator=to_pascal,
-        populate_by_name=True
-    )
-
     key_attributes: Optional[KeyAttributes] = None
     attribute_maps: Optional[List[Dict[str, Any]]] = None
     metric_references: Optional[List[MetricReference]] = None
@@ -65,22 +45,14 @@ class ServiceSummary(AWSBaseModel):
 
 class ListServicesResponse(AWSBaseModel):
     """Response from AWS Application Signals list_services API."""
-    model_config = ConfigDict(
-        alias_generator=to_pascal,
-        populate_by_name=True
-    )
-
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
     service_summaries: Optional[List[ServiceSummary]] = None
     next_token: Optional[str] = None
 
 
-class ListServicesParams(AWSBaseModel):
+class ListServicesParams(BaseModel):
     """Input parameters for list_monitored_services tool."""
-    model_config = ConfigDict(
-        alias_generator=to_pascal,
-        populate_by_name=True
-    )
-
     start_time: datetime = Field(
         description="Start of time period to retrieve services"
     )
@@ -104,4 +76,40 @@ class ListServicesParams(AWSBaseModel):
     aws_account_id: Optional[str] = Field(
         default=None,
         description="Specific AWS account ID to filter by"
+    )
+
+
+class LogGroupReference(AWSBaseModel):
+    """Reference to a CloudWatch log group."""
+    type: Optional[str] = Field(None, description="Should be 'AWS::Resource'")
+    resource_type: Optional[str] = Field(None, description="Should be 'AWS::Logs::LogGroup'")
+    identifier: Optional[str] = Field(None, description="Log group name")
+
+
+class ServiceDetail(AWSBaseModel):
+    """Detailed information about a service from get_service."""
+    key_attributes: Optional[KeyAttributes] = None
+    attribute_maps: Optional[List[Dict[str, Any]]] = None
+    metric_references: Optional[List[MetricReference]] = None
+    log_group_references: Optional[List[LogGroupReference]] = None
+
+
+class GetServiceResponse(AWSBaseModel):
+    """Response from AWS Application Signals get_service API."""
+    service: Optional[ServiceDetail] = None
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+    log_group_references: Optional[List[LogGroupReference]] = None
+
+
+class GetServiceParams(BaseModel):
+    """Input parameters for get_service_detail tool."""
+    service_name: str = Field(
+        description="Name of the service to get details for (case-sensitive)"
+    )
+    hours_back: int = Field(
+        default=24,
+        ge=1,
+        le=168,
+        description="Hours to look back from now"
     )
